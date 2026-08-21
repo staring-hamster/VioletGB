@@ -1,5 +1,4 @@
-#ifndef CPU_HPP
-#define CPU_HPP
+#pragma once
 
 #include <cstdint>
 
@@ -69,7 +68,7 @@ class cpu{
 
     // Stores "value" into register "reg"
     void op_LD_reg_val(uint8_t& reg, uint8_t value);
-    void op_LD_reg_val(uint8_t& reg_high, uint8_t reg_low, uint16_t value);
+    void op_LD_reg_val(uint8_t& reg_high, uint8_t& reg_low, uint16_t value);
 
     // Stores "value" into address "address"
     void op_LD_mem_val(uint16_t address, uint8_t value);  // 8bit
@@ -93,5 +92,3 @@ class cpu{
     void execute();
 
 };
-
-#endif // CPU_HPP

@@ -57,7 +57,7 @@ void cpu::op_LD_reg_val(uint8_t& reg, uint8_t value){
     set_reg(reg, value);
 }
 
-void cpu::op_LD_reg_val(uint8_t& reg_high, uint8_t reg_low, uint16_t value){
+void cpu::op_LD_reg_val(uint8_t& reg_high, uint8_t& reg_low, uint16_t value){
     set_reg(reg_high, reg_low, value);
 }
 
