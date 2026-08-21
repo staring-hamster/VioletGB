@@ -35,7 +35,7 @@ class cpu{
     cpu(){
         // TODO: The constructor should have a way to take a reference to the memory array, then, be able to modify it.
     }
-    
+
     enum flags{
         zero,
         substraction,
@@ -43,13 +43,17 @@ class cpu{
         carry
     };
 
+    // -- 8 bit register functions --
+
+    uint8_t get_reg(uint8_t& reg){ return reg; }
+    void set_reg(uint8_t& reg, uint8_t value){ reg = value; }
 
     //  -- 16 bit register functions --
 
-    uint16_t get_pair(uint8_t& high, uint8_t& low){
+    uint16_t get_reg(uint8_t& high, uint8_t& low){
         return (high << 8) | low;
     }
-    void set_pair(uint8_t& high, uint8_t& low, uint16_t value){
+    void set_reg(uint8_t& high, uint8_t& low, uint16_t value){
         high = (value & 0xFF00) >> 8;
         low  = value & 0x00FF;
     }
@@ -78,6 +82,24 @@ class cpu{
     }
 
     // -- CPU instructions --
+
+    // - Load Instructions -
+
+    // Stores "value" into register "reg"
+    void op_LD_reg_val(uint8_t& reg, uint8_t value){ 
+        set_reg(reg, value);
+    }
+    void op_LD_reg_val(uint8_t& reg_high, uint8_t reg_low, uint16_t value){ 
+        set_reg(reg_high, reg_low, value);
+    }
+
+    // Stores "value" into address "address"
+    void op_LD_mem_val(uint8_t address, uint16_t value){ // 8bit
+        return; // Should be replaced to reference to memory array when implemented.
+    }
+    void op_LD_mem_val(uint16_t address, uint16_t value){ // 16bit
+        return; // Should be replaced to reference to memory array when implemented.
+    }
 
     // - Misc instructions -
 
