@@ -1,6 +1,7 @@
 #include "cpu.hpp"
 
-cpu::cpu(){
+cpu::cpu()
+{
     // TODO: The constructor should have a way to take a reference to the memory array, then, be able to modify it.
 }
 
@@ -75,6 +76,18 @@ void cpu::op_LD_mem_val(uint16_t address, uint16_t value){ // 16bit
 // Increases Program Counter by one.
 void cpu::op_NOP(){
     pc++; // Instruction takes 4 Cycles
+}
+
+void cpu::setup_opcode_tables()
+{
+    for (int i = 0; i < 256; i++){
+        opcode_table[i] = {"NULL", 0, 0, [](){}}; // Stop emulation somehow...
+        cb_opcode_table[i] = {"NULL", 0, 0, [](){}}; // Same.
+    }
+
+    // opcode_table[0x00] = {"", 1, 1, [this](){}}; Template...
+    opcode_table[0x00] = {"NOP", 1, 1, [this](){op_NOP();}};
+    opcode_table[0x02] = {"LD [BC],A", 1, 1, [this](){op_LD_reg_val(b, c, a);}}; 
 }
 
 // -- CPU cycle emulation --

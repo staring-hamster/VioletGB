@@ -1,6 +1,8 @@
 #pragma once
 
+#include <iostream>
 #include <cstdint>
+#include <functional>
 
 class cpu{
     private:
@@ -17,6 +19,19 @@ class cpu{
     uint8_t l = 0x00;
     uint16_t sp = 0x0000; // Stack Pointer
     uint16_t pc = 0x0000; // Program Counter
+
+    // -- Opcode tables --
+
+    struct opcode
+    {
+        std::string name;
+        uint8_t length;
+        uint8_t cycles;
+        std::function<void()> execute; 
+    };
+    
+    std::array<opcode, 256> opcode_table;
+    std::array<opcode, 256> cb_opcode_table;
 
     // -- Flag bit "presets" --
 
@@ -78,6 +93,8 @@ class cpu{
 
     // Increases Program Counter by one.
     void op_NOP();
+
+    void setup_opcode_tables();
 
     // -- CPU cycle emulation --
 
