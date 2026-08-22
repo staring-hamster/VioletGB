@@ -20,6 +20,11 @@ class cpu{
     uint16_t sp = 0x0000; // Stack Pointer
     uint16_t pc = 0x0000; // Program Counter
 
+    // -- Special variables for decoding operands --
+
+    uint8_t decoded_byte = 0x00; 
+    uint16_t decoded_word = 0x0000;
+
     // -- Opcode tables --
 
     struct opcode
@@ -77,7 +82,7 @@ class cpu{
     // Sets the flag bit to argument value.
     void set_flag(flags flag, bool value);
 
-    // -- CPU instructions --
+    //  -- CPU instructions --
 
     // - Load Instructions -
 
@@ -86,8 +91,24 @@ class cpu{
     void op_LD_reg_val(uint8_t& reg_high, uint8_t& reg_low, uint16_t value);
 
     // Stores "value" into address "address"
-    void op_LD_mem_val(uint16_t address, uint8_t value);  // 8bit
-    void op_LD_mem_val(uint16_t address, uint16_t value); // 16bit
+    void op_LD_mem_val(uint16_t address, uint8_t value);  // single byte write
+    void op_LD_mem_val(uint16_t address, uint16_t value); // two-byte write
+
+    // - Arithmetic Instructions -
+
+    // Increase destination by one
+    void op_INC_reg(uint8_t& reg); // 8 bit register, flips flags
+    void op_INC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
+    void op_INC_mem(uint8_t& address_high, uint8_t& address_low);
+
+    // Decrease destination by one
+    void op_DEC_reg(uint8_t& reg); // 8 bit register, flips flags
+    void op_DEC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
+    void op_DEC_mem(uint8_t& address_high, uint8_t& address_low); 
+
+    // - Bit shift Instructions -
+    void op_RLC_reg(uint8_t& reg);
+    void op_RLC_mem(uint16_t& address);
 
     // - Misc instructions -
 
