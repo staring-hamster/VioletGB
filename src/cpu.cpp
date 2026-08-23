@@ -257,6 +257,10 @@ void cpu::op_STOP(){
     return; // I'm not implementing this shit right now.
 }
 
+void cpu::op_HALT(){
+    return; // Nope.
+}
+
 void cpu::op_NULL(){
     throw std::runtime_error("Attempted to run non-existent instruction!");
 }
@@ -290,7 +294,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x0E] = {"LD C,n8", 2, 2, [this](){op_LD_reg_val(c, decoded_byte);}};
     opcode_table[0x0F] = {"RRCA", 1, 1, [this](){op_RRC_reg(a);}};
 
-    opcode_table[0x1000] = {"STOP", 2, 1, [this](){op_STOP();}};
+    opcode_table[0x10] = {"STOP", 2, 1, [this](){op_STOP();}};
     opcode_table[0x11] = {"LD DE,n16", 3, 3, [this](){op_LD_reg_val(d, e, decoded_word);}}; 
     opcode_table[0x12] = {"LD [DE],A", 1, 2, [this](){op_LD_mem_val(get_reg(d, e), a);}};
     opcode_table[0x13] = {"INC DE", 1, 2, [this](){op_INC_reg(d, e);}};
@@ -331,7 +335,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x34] = {"INC [HL]", 1, 3, [this](){op_INC_mem(get_reg(h,l));}};
     opcode_table[0x35] = {"DEC [HL]", 1, 3, [this](){op_DEC_mem(get_reg(h,l));}};
     opcode_table[0x36] = {"LD [HL],n8", 2, 3, [this](){op_LD_mem_val(get_reg(h,l), decoded_byte);}};
-    opcode_table[0x37] = {"SCF", 1, 1, [this](){}}; // did i say balloon? more like, blimp
+    opcode_table[0x37] = {"SCF", 1, 1, [this](){}}; // did i say balloon? more like, blimp :3
     opcode_table[0x38] = {"JR C,s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
     opcode_table[0x39] = {"ADD HL,SP", 1, 2, [this](){op_ADD_reg(h, l, get_reg(sp));}};
     opcode_table[0x3A] = {"LD A,[HL-]", 1, 2, [this](){uint16_t reg_val = get_reg(h,l);uint8_t help = mem.read(reg_val);op_LD_mem_val(a, help);set_reg(h,l,reg_val-1);}}; // heyyy please fix me but only if you want to tho
@@ -341,6 +345,73 @@ void cpu::setup_opcode_tables()
     opcode_table[0x3E] = {"LD A,n8", 2, 2, [this](){op_LD_reg_val(a, decoded_byte);}};
     opcode_table[0x3F] = {"CCF", 1, 1, [this](){}}; // yup, this too
 
+    opcode_table[0x40] = {"LD B,B", 1, 1, [this](){op_LD_reg_val(b, b);}};
+    opcode_table[0x41] = {"LD B,C", 1, 1, [this](){op_LD_reg_val(b, c);}};
+    opcode_table[0x42] = {"LD B,D", 1, 1, [this](){op_LD_reg_val(b, d);}};
+    opcode_table[0x43] = {"LD B,E", 1, 1, [this](){op_LD_reg_val(b, e);}};
+    opcode_table[0x44] = {"LD B,H", 1, 1, [this](){op_LD_reg_val(b, h);}};
+    opcode_table[0x45] = {"LD B,L", 1, 1, [this](){op_LD_reg_val(b, l);}};
+    opcode_table[0x46] = {"LD B,[HL]", 1, 2, [this](){op_LD_reg_val(b, mem.read(get_reg(h, l)));}};
+    opcode_table[0x47] = {"LD B,A", 1, 1, [this](){op_LD_reg_val(b, a);}};
+    opcode_table[0x48] = {"LD C,B", 1, 1, [this](){op_LD_reg_val(c, b);}};
+    opcode_table[0x49] = {"LD C,C", 1, 1, [this](){op_LD_reg_val(c, c);}};
+    opcode_table[0x4A] = {"LD C,D", 1, 1, [this](){op_LD_reg_val(c, d);}};
+    opcode_table[0x4B] = {"LD C,E", 1, 1, [this](){op_LD_reg_val(c, e);}};
+    opcode_table[0x4C] = {"LD C,H", 1, 1, [this](){op_LD_reg_val(c, h);}};
+    opcode_table[0x4D] = {"LD C,L", 1, 1, [this](){op_LD_reg_val(c, l);}};
+    opcode_table[0x4E] = {"LD C,[HL]", 1, 2, [this](){op_LD_reg_val(c, mem.read(get_reg(h,l)));}};
+    opcode_table[0x4F] = {"LD C,A", 1, 1, [this](){op_LD_reg_val(c, a);}};
+
+    opcode_table[0x50] = {"LD D,B", 1, 1, [this](){op_LD_reg_val(d, b);}};
+    opcode_table[0x51] = {"LD D,C", 1, 1, [this](){op_LD_reg_val(d, c);}};
+    opcode_table[0x52] = {"LD D,D", 1, 1, [this](){op_LD_reg_val(d, d);}};
+    opcode_table[0x53] = {"LD D,E", 1, 1, [this](){op_LD_reg_val(d, e);}};
+    opcode_table[0x54] = {"LD D,H", 1, 1, [this](){op_LD_reg_val(d, h);}};
+    opcode_table[0x55] = {"LD D,L", 1, 1, [this](){op_LD_reg_val(d, l);}};
+    opcode_table[0x56] = {"LD D,[HL]", 1, 2, [this](){op_LD_reg_val(d, mem.read(get_reg(h, l)));}};
+    opcode_table[0x57] = {"LD D,A", 1, 1, [this](){op_LD_reg_val(d, a);}};
+    opcode_table[0x58] = {"LD E,B", 1, 1, [this](){op_LD_reg_val(e, b);}};
+    opcode_table[0x59] = {"LD E,C", 1, 1, [this](){op_LD_reg_val(e, c);}};
+    opcode_table[0x5A] = {"LD E,D", 1, 1, [this](){op_LD_reg_val(e, d);}};
+    opcode_table[0x5B] = {"LD E,E", 1, 1, [this](){op_LD_reg_val(e, e);}};
+    opcode_table[0x5C] = {"LD E,H", 1, 1, [this](){op_LD_reg_val(e, h);}};
+    opcode_table[0x5D] = {"LD E,L", 1, 1, [this](){op_LD_reg_val(e, l);}};
+    opcode_table[0x5E] = {"LD E,[HL]", 1, 2, [this](){op_LD_reg_val(e, mem.read(get_reg(h,l)));}};
+    opcode_table[0x5F] = {"LD E,A", 1, 1, [this](){op_LD_reg_val(e, a);}};
+
+    opcode_table[0x60] = {"LD H,B", 1, 1, [this](){op_LD_reg_val(h, b);}};
+    opcode_table[0x61] = {"LD H,C", 1, 1, [this](){op_LD_reg_val(h, c);}};
+    opcode_table[0x62] = {"LD H,D", 1, 1, [this](){op_LD_reg_val(h, d);}};
+    opcode_table[0x63] = {"LD H,E", 1, 1, [this](){op_LD_reg_val(h, e);}};
+    opcode_table[0x64] = {"LD H,H", 1, 1, [this](){op_LD_reg_val(h, h);}};
+    opcode_table[0x65] = {"LD H,L", 1, 1, [this](){op_LD_reg_val(h, l);}};
+    opcode_table[0x66] = {"LD H,[HL]", 1, 2, [this](){op_LD_reg_val(h, mem.read(get_reg(h, l)));}};
+    opcode_table[0x67] = {"LD H,A", 1, 1, [this](){op_LD_reg_val(h, a);}}; // 67
+    opcode_table[0x68] = {"LD L,B", 1, 1, [this](){op_LD_reg_val(l, b);}};
+    opcode_table[0x69] = {"LD L,C", 1, 1, [this](){op_LD_reg_val(l, c);}};
+    opcode_table[0x6A] = {"LD L,D", 1, 1, [this](){op_LD_reg_val(l, d);}};
+    opcode_table[0x6B] = {"LD L,E", 1, 1, [this](){op_LD_reg_val(l, e);}};
+    opcode_table[0x6C] = {"LD L,H", 1, 1, [this](){op_LD_reg_val(l, h);}};
+    opcode_table[0x6D] = {"LD L,L", 1, 1, [this](){op_LD_reg_val(l, l);}};
+    opcode_table[0x6E] = {"LD L,[HL]", 1, 2, [this](){op_LD_reg_val(l, mem.read(get_reg(h,l)));}};
+    opcode_table[0x6F] = {"LD L,A", 1, 1, [this](){op_LD_reg_val(l, a);}};
+
+    opcode_table[0x70] = {"LD [HL],B", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), b);}};
+    opcode_table[0x71] = {"LD [HL],C", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), c);}};
+    opcode_table[0x72] = {"LD [HL],D", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), d);}};
+    opcode_table[0x73] = {"LD [HL],E", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), e);}};
+    opcode_table[0x74] = {"LD [HL],H", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), h);}};
+    opcode_table[0x75] = {"LD [HL],L", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), l);}};
+    opcode_table[0x76] = {"HALT", 1, 1, [this](){}};
+    opcode_table[0x77] = {"LD [HL],A", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), a);}};
+    opcode_table[0x78] = {"LD A,B", 1, 1, [this](){op_LD_reg_val(a, b);}};
+    opcode_table[0x79] = {"LD A,C", 1, 1, [this](){op_LD_reg_val(a, c);}};
+    opcode_table[0x7A] = {"LD A,D", 1, 1, [this](){op_LD_reg_val(a, d);}};
+    opcode_table[0x7B] = {"LD A,E", 1, 1, [this](){op_LD_reg_val(a, e);}};
+    opcode_table[0x7C] = {"LD A,H", 1, 1, [this](){op_LD_reg_val(a, h);}};
+    opcode_table[0x7D] = {"LD A,L", 1, 1, [this](){op_LD_reg_val(a, l);}};
+    opcode_table[0x7E] = {"LD A,[HL]", 1, 2, [this](){op_LD_reg_val(a, mem.read(get_reg(h,l)));}};
+    opcode_table[0x7F] = {"LD A,A", 1, 1, [this](){op_LD_reg_val(a, a);}};
 }
 
 // -- CPU cycle emulation --

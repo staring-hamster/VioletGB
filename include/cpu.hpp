@@ -142,6 +142,7 @@ public:
     // Increases Program Counter by one.
     void op_NOP();
     void op_STOP();
+    void op_HALT();
 
     // Error-handling imaginary instruction.
     void op_NULL(); 
