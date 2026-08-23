@@ -1,9 +1,5 @@
 #include "cpu.hpp"
 
-cpu::cpu(memory &memory_map){
-    this->mem = memory_map; // Creates a reference to the memory map for posterior acessing
-}
-
 // -- 8 bit register functions --
 
 uint8_t cpu::get_reg(uint8_t& reg){
@@ -402,7 +398,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x73] = {"LD [HL],E", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), e);}};
     opcode_table[0x74] = {"LD [HL],H", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), h);}};
     opcode_table[0x75] = {"LD [HL],L", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), l);}};
-    opcode_table[0x76] = {"HALT", 1, 1, [this](){}};
+    opcode_table[0x76] = {"HALT", 1, 1, [this](){op_HALT();}};
     opcode_table[0x77] = {"LD [HL],A", 1, 1, [this](){op_LD_mem_val(get_reg(h, l), a);}};
     opcode_table[0x78] = {"LD A,B", 1, 1, [this](){op_LD_reg_val(a, b);}};
     opcode_table[0x79] = {"LD A,C", 1, 1, [this](){op_LD_reg_val(a, c);}};
@@ -412,6 +408,11 @@ void cpu::setup_opcode_tables()
     opcode_table[0x7D] = {"LD A,L", 1, 1, [this](){op_LD_reg_val(a, l);}};
     opcode_table[0x7E] = {"LD A,[HL]", 1, 2, [this](){op_LD_reg_val(a, mem.read(get_reg(h,l)));}};
     opcode_table[0x7F] = {"LD A,A", 1, 1, [this](){op_LD_reg_val(a, a);}};
+}
+
+cpu::cpu(memory &memory_map){
+    setup_opcode_tables();
+    this->mem = memory_map; // Creates a reference to the memory map for posterior acessing
 }
 
 // -- CPU cycle emulation --

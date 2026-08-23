@@ -30,6 +30,7 @@ private:
     uint8_t decoded_byte = 0x00; 
     uint16_t decoded_word = 0x0000;
 
+    memory mem;
 
     // -- Opcode tables --
 
@@ -58,11 +59,6 @@ private:
         HALF_CARRY_FLAG,
         CARRY_FLAG
     };
-
-    memory mem;
-
-public:
-    cpu(memory &memory_map); // Creates a reference to the memory map for posterior acessing
 
     enum flags{
         zero,
@@ -149,6 +145,9 @@ public:
 
     void setup_opcode_tables();
 
+public:
+
+    cpu(memory &memory_map); // Creates a reference to the memory map for posterior acessing
 
     // -- CPU cycle emulation --
 
