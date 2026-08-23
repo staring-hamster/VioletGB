@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <array>
+#include <stdexcept>
 
 #include "memory.hpp"
 
@@ -80,6 +81,11 @@ public:
     uint16_t get_reg(uint8_t& high, uint8_t& low);
     void set_reg(uint8_t& high, uint8_t& low, uint16_t value);
 
+    // -- special register functions -- 
+
+    uint8_t get_reg(uint16_t &special_reg);
+    void set_reg(uint16_t &special_reg, uint16_t value);
+
     //  -- Flag functions --
 
     // Returns current state of flag. (0 or 1)
@@ -105,12 +111,14 @@ public:
     // Increase destination by one
     void op_INC_reg(uint8_t& reg); // 8 bit register, flips flags
     void op_INC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
+    void op_INC_reg(uint16_t &special_register);
     void op_INC_mem(uint16_t address);
 
     // Decrease destination by one
     void op_DEC_reg(uint8_t& reg); // 8 bit register, flips flags
     void op_DEC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
-    void op_DEC_mem(uint16_t address); 
+    void op_DEC_reg(uint16_t &special_register);
+    void op_DEC_mem(uint16_t address);
 
     // Add value to destination
     void op_ADD_reg(uint8_t& reg, uint8_t value); // 8 bit register
@@ -118,13 +126,25 @@ public:
     // NOTE: This function apparently doesn't have a to add to a memory address, and uses the accumulator as 8 bit reg and HL register as 16 bit/.
 
     // - Bit shift Instructions -
-    void op_RLC_reg(uint8_t& reg);
-    void op_RLC_mem(uint16_t& address);
+
+    // Rotate value to the left, copying bit 7 (leftmost) to register C
+    void op_RLC_reg(uint8_t& reg, bool always_zero);
+    void op_RLC_mem(uint16_t address);
+
+    // Rotate value to the right, copying bit 0 (rightmost) to register C
+    void op_RRC_reg(uint8_t& reg);
+    void op_RRC_mem(uint16_t address);
+
+    void op_RL_reg(uint8_t& reg, bool always_zero);
 
     // - Misc instructions -
 
     // Increases Program Counter by one.
     void op_NOP();
+    void op_STOP();
+
+    // Error-handling imaginary instruction.
+    void op_NULL(); 
 
     void setup_opcode_tables();
 
