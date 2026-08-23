@@ -3,6 +3,9 @@
 #include <iostream>
 #include <cstdint>
 #include <functional>
+#include <array>
+
+#include "memory.hpp"
 
 class cpu{
 private:
@@ -55,9 +58,10 @@ private:
         CARRY_FLAG
     };
 
-public:
+    memory mem;
 
-    cpu();
+public:
+    cpu(memory &memory_map); // Creates a reference to the memory map for posterior acessing
 
     enum flags{
         zero,
@@ -95,19 +99,18 @@ public:
 
     // Stores "value" into address "address"
     void op_LD_mem_val(uint16_t address, uint8_t value);  // single byte write
-    void op_LD_mem_val(uint16_t address, uint16_t value); // two-byte write
 
     // - Arithmetic Instructions -
 
     // Increase destination by one
     void op_INC_reg(uint8_t& reg); // 8 bit register, flips flags
     void op_INC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
-    void op_INC_mem(uint8_t& address_high, uint8_t& address_low);
+    void op_INC_mem(uint16_t address);
 
     // Decrease destination by one
     void op_DEC_reg(uint8_t& reg); // 8 bit register, flips flags
     void op_DEC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
-    void op_DEC_mem(uint8_t& address_high, uint8_t& address_low); 
+    void op_DEC_mem(uint16_t address); 
 
     // Add value to destination
     void op_ADD_reg(uint8_t& reg, uint8_t value); // 8 bit register

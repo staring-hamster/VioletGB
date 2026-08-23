@@ -1,8 +1,7 @@
 #include "cpu.hpp"
 
-cpu::cpu()
-{
-    // TODO: The constructor should have a way to take a reference to the memory array, then, be able to modify it.
+cpu::cpu(memory &memory_map){
+    this->mem = memory_map; // Creates a reference to the memory map for posterior acessing
 }
 
 // -- 8 bit register functions --
@@ -63,13 +62,9 @@ void cpu::op_LD_reg_val(uint8_t& reg_high, uint8_t& reg_low, uint16_t value){
 }
 
 void cpu::op_LD_mem_val(uint16_t address, uint8_t value){
-    return;
+    mem.write(address, value);
 }
 
-void cpu::op_LD_mem_val(uint16_t address, uint16_t value)
-{
-    return;
-}
 
 // Stores "value" into address "address"
 
@@ -77,7 +72,7 @@ void cpu::op_LD_mem_val(uint16_t address, uint16_t value)
 void cpu::op_INC_reg(uint8_t &reg){
     uint8_t reg_value = get_reg(reg);
     uint8_t result = reg_value + 1;
-    bool half_carry = ((reg_value & 0b00001111) + 1) > 0b00001111;
+    bool half_carry = ((reg_value & 0x0F) + 1) > 0x0F;
     
     set_reg(reg, result);
     set_flag(flags::zero, result == 0);
@@ -92,14 +87,21 @@ void cpu::op_INC_reg(uint8_t &reg_high, uint8_t &reg_low){
     set_reg(reg_high, reg_low, result);
 }
 
-void cpu::op_INC_mem(uint8_t &address_high, uint8_t &address_low){
-    return; // TODO: Replace with memory implementation!
+void cpu::op_INC_mem(uint16_t address){
+    uint8_t mem_value = mem.read(address);
+    uint8_t result = mem_value + 1;
+    bool half_carry = ((mem_value & 0x0F) + 1) > 0x0F;
+    
+    mem.write(address, result);
+    set_flag(flags::zero, result == 0);
+    set_flag(flags::substraction, false);
+    set_flag(flags::half_carry, half_carry);
 }
 
 void cpu::op_DEC_reg(uint8_t &reg){
     uint8_t reg_value = get_reg(reg);
     uint8_t result = reg_value - 1;
-    bool half_carry = (reg_value & 0b00001111) == 0;
+    bool half_carry = (reg_value & 0x0F) == 0;
 
     set_reg(reg, result);
     set_flag(flags::zero, result == 0);
@@ -114,8 +116,15 @@ void cpu::op_DEC_reg(uint8_t &reg_high, uint8_t &reg_low){
     set_reg(reg_high, reg_low, result);
 }
 
-void cpu::op_DEC_mem(uint8_t &address_high, uint8_t &address_low){
-    return; // TODO: Replace with memory implementation!
+void cpu::op_DEC_mem(uint16_t address){
+    uint8_t mem_value = mem.read(address);
+    uint8_t result = address - 1;
+    bool half_carry = (mem_value & 0x0F) == 0;
+
+    mem.write(address, result);
+    set_flag(flags::zero, result == 0);
+    set_flag(flags::substraction, true);
+    set_flag(flags::half_carry, half_carry);
 }
 
 void cpu::op_ADD_reg(uint8_t &reg, uint8_t value){
@@ -153,8 +162,8 @@ void cpu::op_RLC_reg(uint8_t &reg)
 {
     uint8_t reg_value = get_reg(reg);
     bool carry_bit = (reg_value & 0b10000000) == 0b10000000; // Isolates bit of interest and compares to its ON state.
-
     uint8_t result = (reg_value << 1) | carry_bit;
+    
     set_reg(reg, result);
     set_flag(flags::zero, result == 0);
     set_flag(flags::substraction, false);
@@ -164,7 +173,15 @@ void cpu::op_RLC_reg(uint8_t &reg)
 
 void cpu::op_RLC_mem(uint16_t &address)
 {
-    return; // TODO: memory implementation...
+    uint8_t mem_value = mem.read(address);
+    bool carry_bit = (mem_value & 0b10000000) == 0b10000000; // Isolates bit of interest and compares to its ON state.
+    uint8_t result = (mem_value << 1) | carry_bit;
+
+    mem.write(address, result);
+    set_flag(flags::zero, result == 0);
+    set_flag(flags::substraction, false);
+    set_flag(flags::half_carry, false);
+    set_flag(flags::carry, carry_bit);
 }
 
 // - Misc instructions -

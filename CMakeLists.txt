@@ -10,6 +10,7 @@ add_compile_options(-Wall -Wextra)
 add_executable(VioletGB
     src/main.cpp
     src/cpu.cpp
+    src/memory.cpp
 )
 
 target_include_directories(VioletGB PRIVATE include)
