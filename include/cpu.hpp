@@ -6,7 +6,7 @@
 #include <array>
 #include <stdexcept>
 
-#include "memory.hpp"
+#include "memory_bus.hpp"
 
 class cpu{
 private:
@@ -30,7 +30,7 @@ private:
     uint8_t decoded_byte = 0x00; 
     uint16_t decoded_word = 0x0000;
 
-    memory mem;
+    memory_bus mem;
 
     // -- Opcode tables --
 
@@ -147,7 +147,7 @@ private:
 
 public:
 
-    cpu(memory &memory_map); // Creates a reference to the memory map for posterior acessing
+    cpu(memory_bus &memory_map); // Creates a reference to the memory map for posterior acessing
 
     // -- CPU cycle emulation --
 
