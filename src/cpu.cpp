@@ -410,9 +410,8 @@ void cpu::setup_opcode_tables()
     opcode_table[0x7F] = {"LD A,A", 1, 1, [this](){op_LD_reg_val(a, a);}};
 }
 
-cpu::cpu(memory_bus &memory_map){
-    setup_opcode_tables();
-    this->mem = memory_map; // Creates a reference to the memory map for posterior acessing
+cpu::cpu(memory_bus &memory_map) : mem(memory_map){
+    setup_opcode_tables(); 
 }
 
 // -- CPU cycle emulation --

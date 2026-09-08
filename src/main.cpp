@@ -7,8 +7,8 @@
 
 int main(){
     cartridge cart("../roms/tetris.gb");
-    memory_bus memory_bus;
-    cpu main_cpu(memory_bus);
+    memory_bus bus(cart);
+    cpu main_cpu(bus);
 
     int rom_size = cart.get_rom_size();
 
