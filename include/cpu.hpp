@@ -22,7 +22,7 @@ private:
     uint8_t h = 0x00;
     uint8_t l = 0x00;
     uint16_t sp = 0x0000; // Stack Pointer
-    uint16_t pc = 0x0000; // Program Counter
+    uint16_t pc = 0x0100; // Program Counter, since we have no boot ROM start PC starts at the programs entry point address $0100.
 
 
     // -- Special variables for decoding operands --
@@ -77,11 +77,6 @@ private:
     uint16_t get_reg(uint8_t& high, uint8_t& low);
     void set_reg(uint8_t& high, uint8_t& low, uint16_t value);
 
-    // -- special register functions -- 
-
-    uint8_t get_reg(uint16_t &special_reg);
-    void set_reg(uint16_t &special_reg, uint16_t value);
-
     //  -- Flag functions --
 
     // Returns current state of flag. (0 or 1)
@@ -107,13 +102,11 @@ private:
     // Increase destination by one
     void op_INC_reg(uint8_t& reg); // 8 bit register, flips flags
     void op_INC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
-    void op_INC_reg(uint16_t &special_register);
     void op_INC_mem(uint16_t address);
 
     // Decrease destination by one
     void op_DEC_reg(uint8_t& reg); // 8 bit register, flips flags
     void op_DEC_reg(uint8_t& reg_high, uint8_t& reg_low); // 16 bit register, doesn't flip flags
-    void op_DEC_reg(uint16_t &special_register);
     void op_DEC_mem(uint16_t address);
 
     // Add value to destination
@@ -125,18 +118,16 @@ private:
 
     // Rotate value to the left, copying bit 7 (leftmost) to register C
     void op_RLC_reg(uint8_t& reg, bool always_zero);
-    void op_RLC_mem(uint16_t address);
+    void op_RLC_mem(uint16_t address, bool always_zero);
 
     // Rotate value to the right, copying bit 0 (rightmost) to register C
-    void op_RRC_reg(uint8_t& reg);
-    void op_RRC_mem(uint16_t address);
+    void op_RRC_reg(uint8_t& reg, bool always_zero);
+    void op_RRC_mem(uint16_t address, bool always_zero);
 
     void op_RL_reg(uint8_t& reg, bool always_zero);
 
     // - Misc instructions -
 
-    // Increases Program Counter by one.
-    void op_NOP();
     void op_STOP();
     void op_HALT();
 
@@ -151,14 +142,12 @@ public:
 
     // -- CPU cycle emulation --
 
-    uint8_t instruction_cycles = 0;
+    // Fetch-Decode-Execute cycle.
+    uint8_t cycles_remaining = 0;  
+    void step();
 
     // "Emulates" one CPU cycle.
     // Useful for timing instruction execution. (Hey! That rhymes!)
     // Should be called by the main program loop.
     void tick();
-
-    // Executes an instruction when the CPU is done with all previous.
-    void execute();
-
 };

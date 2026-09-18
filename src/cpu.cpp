@@ -21,16 +21,6 @@ void cpu::set_reg(uint8_t& high, uint8_t& low, uint16_t value){
     low  = value & 0x00FF;
 }
 
-//  -- special register functions --
-
-uint8_t cpu::get_reg(uint16_t& special_reg){
-    return special_reg;
-}
-
-void cpu::set_reg(uint16_t& special_reg, uint16_t value){
-    special_reg = value;
-}
-
 //  -- Flag functions --
 
 // Returns current state of flag. (0 or 1)
@@ -87,17 +77,10 @@ void cpu::op_INC_reg(uint8_t &reg){
 }
 
 void cpu::op_INC_reg(uint8_t &reg_high, uint8_t &reg_low){
-    uint8_t reg_value = get_reg(reg_high, reg_low);
-    uint8_t result = reg_value + 1;
+    uint16_t reg_value = get_reg(reg_high, reg_low);
+    uint16_t result = reg_value + 1;
     
     set_reg(reg_high, reg_low, result);
-}
-
-void cpu::op_INC_reg(uint16_t &special_register){
-    uint8_t reg_value = get_reg(special_register);
-    uint8_t result = reg_value + 1;
-    
-    set_reg(special_register, result);
 }
 
 void cpu::op_INC_mem(uint16_t address){
@@ -123,22 +106,15 @@ void cpu::op_DEC_reg(uint8_t &reg){
 }
 
 void cpu::op_DEC_reg(uint8_t &reg_high, uint8_t &reg_low){
-    uint8_t reg_value = get_reg(reg_high, reg_low);
-    uint8_t result = reg_value - 1;
+    uint16_t reg_value = get_reg(reg_high, reg_low);
+    uint16_t result = reg_value - 1;
 
     set_reg(reg_high, reg_low, result);
 }
 
-void cpu::op_DEC_reg(uint16_t &special_register){
-    uint8_t reg_value = get_reg(special_register);
-    uint8_t result = reg_value - 1;
-
-    set_reg(special_register, result);
-}
-
 void cpu::op_DEC_mem(uint16_t address){
     uint8_t mem_value = mem.read(address);
-    uint8_t result = address - 1;
+    uint8_t result = mem_value - 1;
     bool half_carry = (mem_value & 0x0F) == 0;
 
     mem.write(address, result);
@@ -168,7 +144,7 @@ void cpu::op_ADD_reg(uint8_t &reg_high, uint8_t &reg_low, uint16_t value){
     uint32_t sum = reg_value + value;
     uint16_t result = static_cast<uint16_t>(sum); // Clamps to be uint_16, the right type.
 
-    bool half_carry = (reg_value & 0x00FF) + (value & 0x00FF) > 0x00FF;
+    bool half_carry = ((reg_value & 0x0FFF) + (value & 0x0FFF)) > 0x0FFF;
     bool carry = sum > 0xFFFF;
 
     set_reg(reg_high, reg_low, result);
@@ -185,44 +161,64 @@ void cpu::op_RLC_reg(uint8_t &reg, bool always_zero = false)
     uint8_t result = (reg_value << 1) | carry_bit;
     
     set_reg(reg, result);
-    set_flag(flags::zero, (result == 0) || always_zero); // always_zero for RLCA instruction!
+    if (always_zero){
+        set_flag(flags::zero, false); // For RLCA instruction, ignore if result is zero or not and just turn flag off
+    }
+    else{
+        set_flag(flags::zero, (result == 0));
+    }
     set_flag(flags::substraction, false);
     set_flag(flags::half_carry, false);
     set_flag(flags::carry, carry_bit);
 }
 
-void cpu::op_RLC_mem(uint16_t address)
+void cpu::op_RLC_mem(uint16_t address, bool always_zero = false)
 {
     uint8_t mem_value = mem.read(address);
     bool carry_bit = (mem_value & 0b10000000) == 0b10000000; // Isolates bit of interest and compares to its ON state.
     uint8_t result = (mem_value << 1) | carry_bit;
 
     mem.write(address, result);
-    set_flag(flags::zero, result == 0);
+    if (always_zero) {
+        set_flag(flags::zero, false);
+    }
+    else {
+        set_flag(flags::zero, result == 0);
+    }
     set_flag(flags::substraction, false);
     set_flag(flags::half_carry, false);
     set_flag(flags::carry, carry_bit);
 }
 
-void cpu::op_RRC_reg(uint8_t &reg){
+void cpu::op_RRC_reg(uint8_t &reg, bool always_zero = false){
     uint8_t reg_value = get_reg(reg);
     bool carry_bit = (reg_value & 0b00000001) == 0b00000001; // Isolates bit of interest and compares to its ON state.
     uint8_t result = (reg_value >> 1) | (carry_bit << 7);
     
     set_reg(reg, result);
-    set_flag(flags::zero, result == 0);
+    if (always_zero) {
+        set_flag(flags::zero, false);
+    }
+    else {
+        set_flag(flags::zero, result == 0);
+    }
     set_flag(flags::substraction, false);
     set_flag(flags::half_carry, false);
     set_flag(flags::carry, carry_bit);
 }
 
-void cpu::op_RRC_mem(uint16_t address){
+void cpu::op_RRC_mem(uint16_t address, bool always_zero){
     uint8_t mem_value = mem.read(address);
     bool carry_bit = (mem_value & 0b00000001) == 0b00000001; // Isolates bit of interest and compares to its ON state.
     uint8_t result = (mem_value >> 1) | (carry_bit << 7);
     
     mem.write(address, result);
-    set_flag(flags::zero, result == 0);
+    if (always_zero) {
+        set_flag(flags::zero, false);
+    }
+    else {
+        set_flag(flags::zero, result == 0);
+    }
     set_flag(flags::substraction, false);
     set_flag(flags::half_carry, false);
     set_flag(flags::carry, carry_bit);
@@ -236,18 +232,18 @@ void cpu::op_RL_reg(uint8_t& reg, bool always_zero = false){
     bool result_carry = (reg_value >> 7) == 0x01;
     
     set_reg(reg, result);
-    set_flag(flags::zero, (result == 0) || always_zero); // always_zero for RLA instruction!
+    if (always_zero){
+        set_flag(flags::zero, false);
+    }
+    else{
+        set_flag(flags::zero, (result == 0));
+    }
     set_flag(flags::substraction, false);
     set_flag(flags::half_carry, false);
     set_flag(flags::carry, result_carry);
 }
 
 // - Misc instructions -
-
-// Increases Program Counter by one.
-void cpu::op_NOP(){
-    pc++;
-}
 
 void cpu::op_STOP(){
     return; // I'm not implementing this shit right now.
@@ -273,7 +269,7 @@ void cpu::setup_opcode_tables()
     // decoded_word is the same for 16bit.
     // Cycles are stored in M-Cycles which equals T-states / 4
 
-    opcode_table[0x00] = {"NOP", 1, 1, [this](){op_NOP();}};
+    opcode_table[0x00] = {"NOP", 1, 1, [](){}}; // No OPeration
     opcode_table[0x01] = {"LD BC,n16", 3, 3, [this](){op_LD_reg_val(b, c, decoded_word);}};  
     opcode_table[0x02] = {"LD [BC],A", 1, 2, [this](){op_LD_mem_val(get_reg(b, c), a);}};
     opcode_table[0x03] = {"INC BC", 1, 2, [this](){op_INC_reg(b, c);}};
@@ -281,9 +277,14 @@ void cpu::setup_opcode_tables()
     opcode_table[0x05] = {"DEC B", 1, 1, [this](){op_DEC_reg(b);}};
     opcode_table[0x06] = {"LD B,n8", 2, 2, [this](){op_LD_reg_val(b, decoded_byte);}};
     opcode_table[0x07] = {"RLCA", 1, 1, [this](){op_RLC_reg(a, true);}};
-    opcode_table[0x08] = {"LD [a16],SP", 3, 5, [this](){op_LD_mem_val(decoded_word, sp);}};
+    opcode_table[0x08] = {"LD [a16],SP", 3, 5, [this](){
+        uint8_t low_byte = static_cast<uint8_t>(sp);
+        uint8_t high_byte = static_cast<uint8_t>(sp >> 8);        
+        op_LD_mem_val(decoded_word, low_byte);
+        op_LD_mem_val(decoded_word + 1, high_byte);
+    }};
     opcode_table[0x09] = {"ADD HL,BC", 1, 2, [this](){op_ADD_reg(h, l, get_reg(b, c));}};
-    opcode_table[0x0A] = {"LD A,[BC]", 1, 2, [this](){op_LD_reg_val(a, get_reg(b, c));}};
+    opcode_table[0x0A] = {"LD A,[BC]", 1, 2, [this](){op_LD_reg_val(a, mem.read(get_reg(b, c)));}};
     opcode_table[0x0B] = {"DEC BC", 1, 2, [this](){op_DEC_reg(b, c);}};
     opcode_table[0x0C] = {"INC C", 1, 1, [this](){op_INC_reg(c);}};
     opcode_table[0x0D] = {"DEC C", 1, 1, [this](){op_DEC_reg(c);}};
@@ -300,7 +301,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x17] = {"RLA", 1, 1, [this](){op_RL_reg(a, true);}};
     opcode_table[0x18] = {"JR s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
     opcode_table[0x19] = {"ADD HL,DE", 1, 2, [this](){op_ADD_reg(h, l, get_reg(d, e));}};
-    opcode_table[0x1A] = {"LD A,[DE]", 1, 2, [this](){op_LD_reg_val(a, get_reg(d, e));}};
+    opcode_table[0x1A] = {"LD A,[DE]", 1, 2, [this](){op_LD_reg_val(a, mem.read(get_reg(d, e)));}};
     opcode_table[0x1B] = {"DEC DE", 1, 2, [this](){op_DEC_reg(d, e);}};
     opcode_table[0x1C] = {"INC E", 1, 1, [this](){op_INC_reg(e);}};
     opcode_table[0x1D] = {"DEC E", 1, 1, [this](){op_DEC_reg(e);}};
@@ -309,7 +310,11 @@ void cpu::setup_opcode_tables()
 
     opcode_table[0x20] = {"JR NZ,s8", 2, 3, [this](){}}; // PLEASE IMPLEMENT ME, BOY!!
     opcode_table[0x21] = {"LD HL,n16", 3, 3, [this](){op_LD_reg_val(h, l, decoded_word);}}; 
-    opcode_table[0x22] = {"LD [HL+],A", 1, 2, [this](){uint8_t help = get_reg(h,l);op_LD_mem_val(help, a);set_reg(h,l,help+1);}}; // HOLY FUCKING SHIT FIX THIS IMPLEMENTATION FOR THE LOVE OF GOD
+    opcode_table[0x22] = {"LD [HL+],A", 1, 2, [this](){
+        uint16_t reg_value = get_reg(h,l); 
+        op_LD_mem_val(reg_value, get_reg(a));
+        set_reg(h,l,reg_value+1);
+    }};
     opcode_table[0x23] = {"INC HL", 1, 2, [this](){op_INC_reg(h, l);}};
     opcode_table[0x24] = {"INC H", 1, 1, [this](){op_INC_reg(h);}};
     opcode_table[0x25] = {"DEC H", 1, 1, [this](){op_DEC_reg(h);}};
@@ -317,7 +322,12 @@ void cpu::setup_opcode_tables()
     opcode_table[0x27] = {"DAA", 1, 1, [this](){}}; // i want someone to inflate me like a balloon (: PLEASE IMPLEMENT THIS!!
     opcode_table[0x28] = {"JR Z,s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
     opcode_table[0x29] = {"ADD HL,HL", 1, 2, [this](){op_ADD_reg(h, l, get_reg(h, l));}};
-    opcode_table[0x2A] = {"LD A,[HL+]", 1, 2, [this](){uint16_t reg_val = get_reg(h,l);uint8_t help = mem.read(reg_val);op_LD_mem_val(a, help);set_reg(h,l,reg_val+1);}}; // heyyy please fix me but only if you want to tho
+    opcode_table[0x2A] = {"LD A,[HL+]", 1, 2, [this](){
+        uint16_t reg_val = get_reg(h,l); 
+        uint8_t mem_val = mem.read(reg_val); // Whatever is on HL's address
+        set_reg(a, mem_val); 
+        set_reg(h,l, reg_val + 1);}
+    };    
     opcode_table[0x2B] = {"DEC HL", 1, 2, [this](){op_DEC_reg(h, l);}};
     opcode_table[0x2C] = {"INC L", 1, 1, [this](){op_INC_reg(l);}};
     opcode_table[0x2D] = {"DEC L", 1, 1, [this](){op_DEC_reg(l);}};
@@ -326,16 +336,25 @@ void cpu::setup_opcode_tables()
 
     opcode_table[0x30] = {"JR NC,s8", 2, 3, [this](){}}; // PLEASE IMPLEMENT
     opcode_table[0x31] = {"LD HL,n16", 3, 3, [this](){op_LD_reg_val(h, l, decoded_word);}}; 
-    opcode_table[0x32] = {"LD [HL-],A", 1, 2, [this](){uint8_t help = get_reg(h,l);op_LD_mem_val(help, a);set_reg(h,l,help-1);}}; // HOLY FUCKING SHIT FIX THIS IMPLEMENTATION FOR THE LOVE OF GOD
-    opcode_table[0x33] = {"INC SP", 1, 2, [this](){op_INC_reg(sp);}};
+    opcode_table[0x32] = {"LD [HL-],A", 1, 2, [this](){
+        uint16_t help = get_reg(h,l);
+        op_LD_mem_val(help, get_reg(a));
+        set_reg(h,l,help-1);
+    }};
+    opcode_table[0x33] = {"INC SP", 1, 2, [this](){sp++;}}; // Used raw sp++ instead of get_reg due to it being a special register
     opcode_table[0x34] = {"INC [HL]", 1, 3, [this](){op_INC_mem(get_reg(h,l));}};
     opcode_table[0x35] = {"DEC [HL]", 1, 3, [this](){op_DEC_mem(get_reg(h,l));}};
     opcode_table[0x36] = {"LD [HL],n8", 2, 3, [this](){op_LD_mem_val(get_reg(h,l), decoded_byte);}};
     opcode_table[0x37] = {"SCF", 1, 1, [this](){}}; // did i say balloon? more like, blimp :3
     opcode_table[0x38] = {"JR C,s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
-    opcode_table[0x39] = {"ADD HL,SP", 1, 2, [this](){op_ADD_reg(h, l, get_reg(sp));}};
-    opcode_table[0x3A] = {"LD A,[HL-]", 1, 2, [this](){uint16_t reg_val = get_reg(h,l);uint8_t help = mem.read(reg_val);op_LD_mem_val(a, help);set_reg(h,l,reg_val-1);}}; // heyyy please fix me but only if you want to tho
-    opcode_table[0x3B] = {"DEC SP", 1, 2, [this](){op_DEC_reg(sp);}};
+    opcode_table[0x39] = {"ADD HL,SP", 1, 2, [this](){op_ADD_reg(h, l, sp);}};
+    opcode_table[0x3A] = {"LD A,[HL-]", 1, 2, [this](){
+        uint16_t reg_val = get_reg(h,l);
+        uint8_t mem_val = mem.read(reg_val);
+        set_reg(a, mem_val);
+        set_reg(h,l, reg_val-1);
+    }}; 
+    opcode_table[0x3B] = {"DEC SP", 1, 2, [this](){sp--;}};
     opcode_table[0x3C] = {"INC A", 1, 1, [this](){op_INC_reg(a);}};
     opcode_table[0x3D] = {"DEC A", 1, 1, [this](){op_DEC_reg(a);}};
     opcode_table[0x3E] = {"LD A,n8", 2, 2, [this](){op_LD_reg_val(a, decoded_byte);}};
@@ -414,16 +433,34 @@ cpu::cpu(memory_bus &memory_map) : mem(memory_map){
     setup_opcode_tables(); 
 }
 
+void cpu::step(){
+    // Fetch
+    uint8_t opcode_hex = mem.read(pc); 
+    opcode instruction = opcode_table[opcode_hex];
+
+    // Decode
+    if (instruction.length == 2) {
+        decoded_byte = mem.read(pc + 1);
+    }
+    else if (instruction.length == 3) {
+        uint16_t new_word = mem.read(pc + 2); // Little endian, most significant byte is stored after, so store backwards
+        new_word = new_word << 8;
+        new_word = new_word | static_cast<uint16_t>(mem.read(pc + 1));
+        decoded_word = new_word;
+    }
+    
+    // Execute
+    instruction.execute();
+
+    cycles_remaining = instruction.cycles - 1;
+    pc += instruction.length;
+}
+
 // -- CPU cycle emulation --
 
-// "Emulates" one CPU cycle.
+// "Emulates" one CPU M-cycle.
 // Useful for timing instruction execution. (Hey! That rhymes!)
 // Should be called by the main program loop.
 void cpu::tick(){
-    return;
-}
-
-// Executes an instruction when the CPU is done with all previous.
-void cpu::execute(){
     return;
 }

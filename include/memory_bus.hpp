@@ -16,6 +16,9 @@ private:
     // 8kb arrays
     std::array<uint8_t, 0x2000> ram; 
     std::array<uint8_t, 0x2000> vram;
+
+    // Placeholder everything else array, 16kb
+    std::array<uint8_t, 0x10000> else_mem;
     cartridge cart;
 public:
     memory_bus(cartridge &cart);
