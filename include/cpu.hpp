@@ -5,6 +5,7 @@
 #include <functional>
 #include <array>
 #include <stdexcept>
+#include <bit>
 
 #include "memory_bus.hpp"
 
@@ -125,6 +126,9 @@ private:
     void op_RRC_mem(uint16_t address, bool always_zero);
 
     void op_RL_reg(uint8_t& reg, bool always_zero);
+
+    // - Program control instructions -
+    void op_JR(uint8_t steps, bool condition);
 
     // - Misc instructions -
 

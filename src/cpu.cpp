@@ -243,6 +243,12 @@ void cpu::op_RL_reg(uint8_t& reg, bool always_zero = false){
     set_flag(flags::carry, result_carry);
 }
 
+void cpu::op_JR(uint8_t steps, bool condition){
+    if (condition){
+        int8_t reinterpreted_steps = std::bit_cast<int8_t>(steps);
+        pc += reinterpreted_steps;
+    }
+}
 // - Misc instructions -
 
 void cpu::op_STOP(){
@@ -299,7 +305,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x15] = {"DEC D", 1, 1, [this](){op_DEC_reg(d);}};
     opcode_table[0x16] = {"LD D,n8", 2, 2, [this](){op_LD_reg_val(d, decoded_byte);}};
     opcode_table[0x17] = {"RLA", 1, 1, [this](){op_RL_reg(a, true);}};
-    opcode_table[0x18] = {"JR s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
+    opcode_table[0x18] = {"JR s8", 2, 3, [this](){op_JR(decoded_word, true);}};
     opcode_table[0x19] = {"ADD HL,DE", 1, 2, [this](){op_ADD_reg(h, l, get_reg(d, e));}};
     opcode_table[0x1A] = {"LD A,[DE]", 1, 2, [this](){op_LD_reg_val(a, mem.read(get_reg(d, e)));}};
     opcode_table[0x1B] = {"DEC DE", 1, 2, [this](){op_DEC_reg(d, e);}};
@@ -308,7 +314,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x1E] = {"LD E,n8", 2, 2, [this](){op_LD_reg_val(e, decoded_byte);}};
     opcode_table[0x1F] = {"RRA", 1, 1, [this](){}}; // NEEDS IMPLEMENTATION!!!
 
-    opcode_table[0x20] = {"JR NZ,s8", 2, 3, [this](){}}; // PLEASE IMPLEMENT ME, BOY!!
+    opcode_table[0x20] = {"JR NZ,s8", 2, 3, [this](){op_JR(decoded_byte, !get_flag(flags::zero));}};
     opcode_table[0x21] = {"LD HL,n16", 3, 3, [this](){op_LD_reg_val(h, l, decoded_word);}}; 
     opcode_table[0x22] = {"LD [HL+],A", 1, 2, [this](){
         uint16_t reg_value = get_reg(h,l); 
@@ -320,7 +326,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x25] = {"DEC H", 1, 1, [this](){op_DEC_reg(h);}};
     opcode_table[0x26] = {"LD H,n8", 2, 2, [this](){op_LD_reg_val(h, decoded_byte);}};
     opcode_table[0x27] = {"DAA", 1, 1, [this](){}}; // i want someone to inflate me like a balloon (: PLEASE IMPLEMENT THIS!!
-    opcode_table[0x28] = {"JR Z,s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
+    opcode_table[0x28] = {"JR Z,s8", 2, 3, [this](){op_JR(decoded_byte, get_flag(flags::zero));}};
     opcode_table[0x29] = {"ADD HL,HL", 1, 2, [this](){op_ADD_reg(h, l, get_reg(h, l));}};
     opcode_table[0x2A] = {"LD A,[HL+]", 1, 2, [this](){
         uint16_t reg_val = get_reg(h,l); 
@@ -334,19 +340,19 @@ void cpu::setup_opcode_tables()
     opcode_table[0x2E] = {"LD L,n8", 2, 2, [this](){op_LD_reg_val(l, decoded_byte);}};
     opcode_table[0x2F] = {"CPL", 1, 1, [this](){}}; // do i even have to say it?
 
-    opcode_table[0x30] = {"JR NC,s8", 2, 3, [this](){}}; // PLEASE IMPLEMENT
+    opcode_table[0x30] = {"JR NC,s8", 2, 3, [this](){op_JR(decoded_byte, !get_flag(flags::carry));}};
     opcode_table[0x31] = {"LD HL,n16", 3, 3, [this](){op_LD_reg_val(h, l, decoded_word);}}; 
     opcode_table[0x32] = {"LD [HL-],A", 1, 2, [this](){
         uint16_t help = get_reg(h,l);
         op_LD_mem_val(help, get_reg(a));
         set_reg(h,l,help-1);
     }};
-    opcode_table[0x33] = {"INC SP", 1, 2, [this](){sp++;}}; // Used raw sp++ instead of get_reg due to it being a special register
+    opcode_table[0x33] = {"INC SP", 1, 2, [this](){sp++;}};
     opcode_table[0x34] = {"INC [HL]", 1, 3, [this](){op_INC_mem(get_reg(h,l));}};
     opcode_table[0x35] = {"DEC [HL]", 1, 3, [this](){op_DEC_mem(get_reg(h,l));}};
     opcode_table[0x36] = {"LD [HL],n8", 2, 3, [this](){op_LD_mem_val(get_reg(h,l), decoded_byte);}};
     opcode_table[0x37] = {"SCF", 1, 1, [this](){}}; // did i say balloon? more like, blimp :3
-    opcode_table[0x38] = {"JR C,s8", 2, 3, [this](){}}; // NEEDS IMPLEMENTATION!
+    opcode_table[0x38] = {"JR C,s8", 2, 3, [this](){op_JR(decoded_byte, get_flag(flags::carry));}};
     opcode_table[0x39] = {"ADD HL,SP", 1, 2, [this](){op_ADD_reg(h, l, sp);}};
     opcode_table[0x3A] = {"LD A,[HL-]", 1, 2, [this](){
         uint16_t reg_val = get_reg(h,l);
