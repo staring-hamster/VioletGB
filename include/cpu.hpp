@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip> // Debug, might remove.
 #include <cstdint>
 #include <functional>
 #include <array>
@@ -23,7 +24,7 @@ private:
     uint8_t h = 0x00;
     uint8_t l = 0x00;
     uint16_t sp = 0x0000; // Stack Pointer
-    uint16_t pc = 0x0100; // Program Counter, since we have no boot ROM start PC starts at the programs entry point address $0100.
+    uint16_t pc = 0x0150; // Program Counter, since we have no boot ROM start PC starts at the programs entry point address $0100. ($0150 cuz I have no JP instruction yet lol)
 
 
     // -- Special variables for decoding operands --
@@ -45,6 +46,7 @@ private:
     
     std::array<opcode, 256> opcode_table;
     std::array<opcode, 256> cb_opcode_table;
+    uint16_t last_instruction; // 16 bit int to support 0xCB instructions later down the line.
 
 
     // -- Flag bit "presets" --
@@ -139,6 +141,9 @@ private:
     void op_NULL(); 
 
     void setup_opcode_tables();
+    void dump_registers();
+    void dump_instruction(const opcode &instruction);
+    void dump_state(const opcode &instruction);
 
 public:
 
@@ -154,4 +159,6 @@ public:
     // Useful for timing instruction execution. (Hey! That rhymes!)
     // Should be called by the main program loop.
     void tick();
+    
+    uint16_t get_last_instruction();
 };

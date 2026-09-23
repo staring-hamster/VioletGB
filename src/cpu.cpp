@@ -260,6 +260,7 @@ void cpu::op_HALT(){
 }
 
 void cpu::op_NULL(){
+    dump_registers();
     throw std::runtime_error("Attempted to run non-existent instruction!");
 }
 
@@ -435,6 +436,38 @@ void cpu::setup_opcode_tables()
     opcode_table[0x7F] = {"LD A,A", 1, 1, [this](){op_LD_reg_val(a, a);}};
 }
 
+void cpu::dump_registers(){
+    std::cout << std::hex << std::uppercase << std::setfill('0')
+              << "A: "  << std::setw(2) << +a  << " "
+              << "B: "  << std::setw(2) << +b  << " "
+              << "C: "  << std::setw(2) << +c  << " "
+              << "D: "  << std::setw(2) << +d  << " "
+              << "E: "  << std::setw(2) << +e  << " "
+              << "F: "  << std::setw(2) << +f  << " "
+              << "H: "  << std::setw(2) << +h  << " "
+              << "L: "  << std::setw(2) << +l  << " "
+              << "SP: " << std::setw(4) << sp << " "
+              << "PC: " << std::setw(4) << pc
+              << std::dec << std::setfill(' ') << std::endl; // reset sticky hex
+}
+
+void cpu::dump_instruction(const opcode& instruction){
+    std::cout << "Instr: " << instruction.name;
+
+    if (instruction.length == 2) {
+        std::cout << std::hex << std::uppercase << std::setfill('0') << " OP: " << std::setw(2) << +decoded_byte;
+    } else if (instruction.length == 3) {
+        std::cout << std::hex << std::uppercase << std::setfill('0') << " OP: " << std::setw(4) << decoded_word;
+    }
+    std::cout << '\n';
+}
+
+void cpu::dump_state(const opcode& instruction) {
+    dump_instruction(instruction);
+    dump_registers();
+}
+
+
 cpu::cpu(memory_bus &memory_map) : mem(memory_map){
     setup_opcode_tables(); 
 }
@@ -443,6 +476,8 @@ void cpu::step(){
     // Fetch
     uint8_t opcode_hex = mem.read(pc); 
     opcode instruction = opcode_table[opcode_hex];
+
+    last_instruction = opcode_hex; // Debug, might remove.
 
     // Decode
     if (instruction.length == 2) {
@@ -454,9 +489,9 @@ void cpu::step(){
         new_word = new_word | static_cast<uint16_t>(mem.read(pc + 1));
         decoded_word = new_word;
     }
-    
     // Execute
     instruction.execute();
+    dump_state(instruction);
 
     cycles_remaining = instruction.cycles - 1;
     pc += instruction.length;
@@ -468,5 +503,15 @@ void cpu::step(){
 // Useful for timing instruction execution. (Hey! That rhymes!)
 // Should be called by the main program loop.
 void cpu::tick(){
-    return;
+    if (cycles_remaining == 0){
+        step();
+    }
+    else{
+        cycles_remaining--;
+    }
+}
+
+uint16_t cpu::get_last_instruction()
+{
+    return last_instruction;
 }

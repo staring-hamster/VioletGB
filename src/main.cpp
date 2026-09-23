@@ -5,18 +5,20 @@
 #include "memory_bus.hpp"
 #include "cpu.hpp"
 
-const double MS_FRAMETIME = 16.7504188; // Delay per frame in ms
-const int CYCLES_PER_FRAME = 17556; // M-cycles, cycles in a single frame
+constexpr double MS_FRAMETIME = 16.7504188; // Delay per frame in ms
+constexpr int CYCLES_PER_FRAME = 17556; // M-cycles, cycles in a single frame
 
 int main(){
-    cartridge cart("../roms/tetris.gb");
+    bool running = true;
+
+    cartridge cart("../roms/test.gb");
     memory_bus bus(cart);
     cpu main_cpu(bus);
 
     size_t rom_size = cart.get_rom_size();
 
     std::cout << "Hello, Gameboy!\n";
-    std::cout << "ROM size: " << std::to_string(rom_size);
+    std::cout << "ROM size: " << std::to_string(rom_size) << std::endl;
 
     /*
     incase i want to print the rom's data
@@ -32,12 +34,19 @@ int main(){
     }
     */
 
-    // Render loop starts here!
+    // Render loop here!
+    while (running){
+        for (int i = 0; i < CYCLES_PER_FRAME; i++){
+            main_cpu.tick(); // Runs this shit 17k+ times per frame
 
-    for (int i = 0; i < CYCLES_PER_FRAME; i++){
-        main_cpu.tick(); // Runs this shit 17k+ times per frame
+            if (main_cpu.get_last_instruction() == 0x40){ // 0x40 is the opcode for "LD B,B", used as a breakpoint.
+                std::cout << "Breakpoint reached!" << std::endl;
+                running = false;
+                break;
+            }
+        }
+        // Find a way to delay accurately
     }
-
-    // Find a way to delay accurately
+    
     return 0;
 }
