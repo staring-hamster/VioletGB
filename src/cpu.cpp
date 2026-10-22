@@ -58,8 +58,6 @@ void cpu::op_LD_mem(uint16_t address, uint8_t value){
 
 
 // Stores "value" into address "address"
-
-
 void cpu::op_INC_reg(uint8_t &reg){
     uint8_t reg_value = get_reg(reg);
     uint8_t result = reg_value + 1;
@@ -227,12 +225,27 @@ void cpu::op_RL_reg(uint8_t& reg, bool always_zero = false){
     bool result_carry = (reg_value >> 7) == 0x01;
     
     set_reg(reg, result);
-    if (always_zero){
-        set_flag(Flags::ZERO, false);
-    }
-    else{
-        set_flag(Flags::ZERO, (result == 0));
-    }
+
+    if (always_zero) set_flag(Flags::ZERO, false);
+    else set_flag(Flags::ZERO, (result == 0));
+
+    set_flag(Flags::SUBSTRACTION, false);
+    set_flag(Flags::HALF_CARRY, false);
+    set_flag(Flags::CARRY, result_carry);
+}
+
+void cpu::op_RR_reg(uint8_t &reg, bool always_zero){
+    uint8_t reg_value = get_reg(reg);
+    bool carry_bit = get_flag(Flags::CARRY);
+
+    uint8_t result = (reg_value >> 1) | (carry_bit << 7); // Rotate reg_value one bit right and add C flag status at bit 7
+    bool result_carry = reg_value & 0x01;
+    
+    set_reg(reg, result);
+
+    if (always_zero) set_flag(Flags::ZERO, false);
+    else set_flag(Flags::ZERO, (result == 0));
+
     set_flag(Flags::SUBSTRACTION, false);
     set_flag(Flags::HALF_CARRY, false);
     set_flag(Flags::CARRY, result_carry);
@@ -244,7 +257,40 @@ void cpu::op_JR(uint8_t steps, bool condition){
         pc += reinterpreted_steps;
     }
 }
-// - Misc instructions -
+
+void cpu::op_DAA() {
+    uint8_t a_value = get_reg(a);
+    uint8_t adjustment = 0;
+
+    const bool n_flag = get_flag(Flags::SUBSTRACTION);
+    const bool h_flag = get_flag(Flags::HALF_CARRY);
+    bool c_flag = get_flag(Flags::CARRY);
+
+    if (n_flag) {
+        // After subtraction (SUB, SBC)
+        if (h_flag) adjustment += 6;
+        if (c_flag) adjustment += 60;
+        a_value -= adjustment;
+    } else {
+        // After addition (ADD, ADC)
+        if (h_flag || (a_value & 0x0F) > 0x09) adjustment += 6;
+        if (c_flag || a_value > 0x99) {
+            adjustment += 60;
+            c_flag = true; // DAA sets Carry if addition overflowed BCD range
+        }
+        a_value += adjustment;
+    }
+
+    set_reg(a, a_value);
+    set_flag(Flags::HALF_CARRY, false);
+    set_flag(Flags::CARRY, c_flag);
+    set_flag(Flags::ZERO, a_value == 0);
+}
+
+void cpu::op_CPL(){
+    uint8_t a_value = get_reg(a);
+    set_reg(a, ~a_value);
+}
 
 void cpu::op_STOP(){
     return; // I'm not implementing this shit right now.
@@ -308,7 +354,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x1C] = {"INC E", 1, 1, [this](){op_INC_reg(e);}};
     opcode_table[0x1D] = {"DEC E", 1, 1, [this](){op_DEC_reg(e);}};
     opcode_table[0x1E] = {"LD E,n8", 2, 2, [this](){op_LD_reg(e, decoded_byte);}};
-    opcode_table[0x1F] = {"RRA", 1, 1, [this](){}}; // NEEDS IMPLEMENTATION!!!
+    opcode_table[0x1F] = {"RRA", 1, 1, [this](){op_RR_reg(a, true);}};
 
     opcode_table[0x20] = {"JR NZ,s8", 2, 3, [this](){op_JR(decoded_byte, !get_flag(Flags::ZERO));}};
     opcode_table[0x21] = {"LD HL,n16", 3, 3, [this](){op_LD_reg(h, l, decoded_word);}}; 
@@ -321,7 +367,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x24] = {"INC H", 1, 1, [this](){op_INC_reg(h);}};
     opcode_table[0x25] = {"DEC H", 1, 1, [this](){op_DEC_reg(h);}};
     opcode_table[0x26] = {"LD H,n8", 2, 2, [this](){op_LD_reg(h, decoded_byte);}};
-    opcode_table[0x27] = {"DAA", 1, 1, [this](){}}; // i want someone to inflate me like a balloon (: PLEASE IMPLEMENT THIS!!
+    opcode_table[0x27] = {"DAA", 1, 1, [this](){op_DAA();}}; 
     opcode_table[0x28] = {"JR Z,s8", 2, 3, [this](){op_JR(decoded_byte, get_flag(Flags::ZERO));}};
     opcode_table[0x29] = {"ADD HL,HL", 1, 2, [this](){op_ADD_reg(h, l, get_reg(h, l));}};
     opcode_table[0x2A] = {"LD A,[HL+]", 1, 2, [this](){
@@ -334,7 +380,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x2C] = {"INC L", 1, 1, [this](){op_INC_reg(l);}};
     opcode_table[0x2D] = {"DEC L", 1, 1, [this](){op_DEC_reg(l);}};
     opcode_table[0x2E] = {"LD L,n8", 2, 2, [this](){op_LD_reg(l, decoded_byte);}};
-    opcode_table[0x2F] = {"CPL", 1, 1, [this](){}}; // do i even have to say it?
+    opcode_table[0x2F] = {"CPL", 1, 1, [this](){op_CPL();}};
 
     opcode_table[0x30] = {"JR NC,s8", 2, 3, [this](){op_JR(decoded_byte, !get_flag(Flags::CARRY));}};
     opcode_table[0x31] = {"LD HL,n16", 3, 3, [this](){op_LD_reg(h, l, decoded_word);}}; 
@@ -347,7 +393,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x34] = {"INC [HL]", 1, 3, [this](){op_INC_mem(get_reg(h,l));}};
     opcode_table[0x35] = {"DEC [HL]", 1, 3, [this](){op_DEC_mem(get_reg(h,l));}};
     opcode_table[0x36] = {"LD [HL],n8", 2, 3, [this](){op_LD_mem(get_reg(h,l), decoded_byte);}};
-    opcode_table[0x37] = {"SCF", 1, 1, [this](){}}; // did i say balloon? more like, blimp :3
+    opcode_table[0x37] = {"SCF", 1, 1, [this](){set_flag(Flags::CARRY, true);}};
     opcode_table[0x38] = {"JR C,s8", 2, 3, [this](){op_JR(decoded_byte, get_flag(Flags::CARRY));}};
     opcode_table[0x39] = {"ADD HL,SP", 1, 2, [this](){op_ADD_reg(h, l, sp);}};
     opcode_table[0x3A] = {"LD A,[HL-]", 1, 2, [this](){
@@ -360,7 +406,7 @@ void cpu::setup_opcode_tables()
     opcode_table[0x3C] = {"INC A", 1, 1, [this](){op_INC_reg(a);}};
     opcode_table[0x3D] = {"DEC A", 1, 1, [this](){op_DEC_reg(a);}};
     opcode_table[0x3E] = {"LD A,n8", 2, 2, [this](){op_LD_reg(a, decoded_byte);}};
-    opcode_table[0x3F] = {"CCF", 1, 1, [this](){}}; // yup, this too
+    opcode_table[0x3F] = {"CCF", 1, 1, [this](){set_flag(Flags::CARRY, !get_flag(Flags::CARRY));}};
 
     opcode_table[0x40] = {"LD B,B", 1, 1, [this](){op_LD_reg(b, b);}};
     opcode_table[0x41] = {"LD B,C", 1, 1, [this](){op_LD_reg(b, c);}};

@@ -113,13 +113,18 @@ private:
     void op_RRC_reg(uint8_t& reg, bool always_zero);
     void op_RRC_mem(uint16_t address, bool always_zero);
 
+    // Rotate bits in register reg left, through the carry flag.
     void op_RL_reg(uint8_t& reg, bool always_zero);
+    // Rotate bits in register reg right, through the carry flag.
+    void op_RR_reg(uint8_t& reg, bool always_zero);
 
     // - Program control instructions -
     void op_JR(uint8_t steps, bool condition);
 
     // - Misc instructions -
 
+    void op_DAA();
+    void op_CPL();
     void op_STOP();
     void op_HALT();
 
