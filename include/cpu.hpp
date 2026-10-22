@@ -36,8 +36,7 @@ private:
 
     // -- Opcode tables --
 
-    struct opcode
-    {
+    struct opcode{
         std::string name;
         uint8_t length;
         uint8_t cycles;
@@ -48,26 +47,13 @@ private:
     std::array<opcode, 256> cb_opcode_table;
     uint16_t last_instruction; // 16 bit int to support 0xCB instructions later down the line.
 
-
     // -- Flag bit "presets" --
 
-    const uint8_t ZERO_FLAG          = 0b10000000;
-    const uint8_t SUBTRACTION_FLAG   = 0b01000000;
-    const uint8_t HALF_CARRY_FLAG    = 0b00100000;
-    const uint8_t CARRY_FLAG         = 0b00010000;
-
-    const uint8_t flag_table[4] = {
-        ZERO_FLAG, 
-        SUBTRACTION_FLAG,
-        HALF_CARRY_FLAG,
-        CARRY_FLAG
-    };
-
-    enum flags{
-        zero,
-        substraction,
-        half_carry,
-        carry
+    enum Flags{
+        ZERO = 0b10000000,
+        SUBSTRACTION = 0b01000000,
+        HALF_CARRY = 0b00100000,
+        CARRY = 0b00010000
     };
 
     // -- 8 bit register functions --
@@ -84,9 +70,9 @@ private:
 
     // Returns current state of flag. (0 or 1)
     // Use the "flags" enum for flag selection.
-    bool get_flag(flags flag);
+    bool get_flag(Flags flag);
     // Sets the flag bit to argument value.
-    void set_flag(flags flag, bool value);
+    void set_flag(Flags flag, bool value);
 
 
     //  -- CPU instructions --
@@ -94,11 +80,11 @@ private:
     // - Load Instructions -
 
     // Stores "value" into register "reg"
-    void op_LD_reg_val(uint8_t& reg, uint8_t value);
-    void op_LD_reg_val(uint8_t& reg_high, uint8_t& reg_low, uint16_t value);
+    void op_LD_reg(uint8_t& reg, uint8_t value);
+    void op_LD_reg(uint8_t& reg_high, uint8_t& reg_low, uint16_t value);
 
     // Stores "value" into address "address"
-    void op_LD_mem_val(uint16_t address, uint8_t value);  // single byte write
+    void op_LD_mem(uint16_t address, uint8_t value);  // single byte write
 
     // - Arithmetic Instructions -
 

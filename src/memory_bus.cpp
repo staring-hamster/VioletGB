@@ -9,16 +9,14 @@ memory_bus::memory_bus(cartridge &cart) : cart(cart){
 // Entering address should be offset to zero depending what zone is being accessed
 uint8_t memory_bus::read(uint16_t address){
     if (address >= 0x0000 && address <= 0x7FFF)      { return cart.read(address); }
-    else if (address >= 0x8000 && address <= 0x9FFF) { return vram.at(address - 0x9FFF); }
-    else if (address >= 0xC000 && address <= 0xDFFF) { return ram.at(address - 0xC000); }
-    else                                             { return else_mem.at(address); }
-    //else                                             { throw std::runtime_error("Attempted to read non-mapped memory!"); }
+    else if (address >= 0x8000 && address <= 0x9FFF) { return vram[address - 0x9FFF]; }
+    else if (address >= 0xC000 && address <= 0xDFFF) { return ram[address - 0xC000]; }
+    else                                             { return else_mem[address]; }
 }
 
 void memory_bus::write(uint16_t address, uint8_t value){
     if (address >= 0x0000 && address <= 0x7FFF)      { throw std::runtime_error("Attempted to write to ROM!"); }
-    else if (address >= 0x8000 && address <= 0x9FFF) { vram.at(address - 0x9FFF) = value; }
-    else if (address >= 0xC000 && address <= 0xDFFF) { ram.at(address - 0xC000) = value; }
-    else                                             { else_mem.at(address); }
-    //else                                             { throw std::runtime_error("Attempted to write non-mapped memory!"); }
+    else if (address >= 0x8000 && address <= 0x9FFF) { vram[address - 0x9FFF] = value; }
+    else if (address >= 0xC000 && address <= 0xDFFF) { ram[address - 0xC000] = value; }
+    else                                             { else_mem[address]; }
 }

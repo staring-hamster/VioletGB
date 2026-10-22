@@ -17,7 +17,7 @@ cartridge::cartridge(std::string path){
 }
 
 uint8_t cartridge::read(uint16_t address){
-    return cart_buffer.at(address);
+    return cart_buffer[address];
 }
 
 size_t cartridge::get_rom_size(){
